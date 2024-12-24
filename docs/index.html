@@ -1,1 +1,49 @@
-abc?
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flight Routes</title>
+  <!-- 引入 Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>My Flight Routes</h1>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // 创建地图
+    var map = L.map('map').setView([0, 0], 2);  // 默认位置设置为(0, 0)，缩放级别为2
+
+    // 加载地图底图（使用 OpenStreetMap）
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // 飞行航线示例：起点和终点的经纬度
+    var routes = [
+      { from: [40.7128, -74.0060], to: [34.0522, -118.2437] },  // 纽约 -> 洛杉矶
+      { from: [51.5074, -0.1278], to: [48.8566, 2.3522] },      // 伦敦 -> 巴黎
+      { from: [35.6762, 139.6503], to: [37.7749, -122.4194] }   // 东京 -> 旧金山
+    ];
+
+    // 标记航线
+    routes.forEach(function(route) {
+      L.polyline([route.from, route.to], {color: 'blue', weight: 3, opacity: 0.6}).addTo(map);
+    });
+
+    // 可选：添加起点和终点标记
+    routes.forEach(function(route) {
+      L.marker(route.from).addTo(map).bindPopup('Start: ' + route.from);
+      L.marker(route.to).addTo(map).bindPopup('End: ' + route.to);
+    });
+  </script>
+</body>
+</html>
