@@ -1,49 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flight Routes</title>
-  <!-- 引入 Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    #map {
-      height: 500px;
+    /* 设置地图容器全屏 */
+    html, body, #map {
+      margin: 0;
+      padding: 0;
+      height: 100%;
       width: 100%;
     }
   </style>
 </head>
 <body>
-  <h1>My Flight Routes</h1>
-  <div id="map"></div>
-
+  <!-- 引入 Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- 引入 Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- 引入 Leaflet.curve 插件 -->
+  <script src="leaflet.curve.js"></script>
+  <div id="map"></div>
   <script>
     // 创建地图
-    var map = L.map('map').setView([0, 0], 2);  // 默认位置设置为(0, 0)，缩放级别为2
+    var map = L.map('map').setView([0, 0], 2);
 
-    // 加载地图底图（使用 OpenStreetMap）
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // 加载地图底图
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png?api_key=fe0d5c75-05be-425e-a147-61d7c4162184', {
+      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>',
+      maxZoom: 20
     }).addTo(map);
 
-    // 飞行航线示例：起点和终点的经纬度
-    var routes = [
-      { from: [40.7128, -74.0060], to: [34.0522, -118.2437] },  // 纽约 -> 洛杉矶
-      { from: [51.5074, -0.1278], to: [48.8566, 2.3522] },      // 伦敦 -> 巴黎
-      { from: [35.6762, 139.6503], to: [37.7749, -122.4194] }   // 东京 -> 旧金山
-    ];
+    // 地理编码 API URL（使用 OpenCage 的免费 API，需替换 API_KEY）
+    const geocodeURL = "https://api.opencagedata.com/geocode/v1/json?q={city}&key=aee46f1289a340648447287ef1522f03";
 
-    // 标记航线
-    routes.forEach(function(route) {
-      L.polyline([route.from, route.to], {color: 'blue', weight: 3, opacity: 0.6}).addTo(map);
-    });
+    // 从文档中加载航线数据
+    fetch('routes.json')
+      .then(response => response.json())
+      .then(async data => {
+        for (const route of data.routes) {
+          const fromCoords = await getCoordinates(route.from);
+          const toCoords = await getCoordinates(route.to);
 
-    // 可选：添加起点和终点标记
-    routes.forEach(function(route) {
-      L.marker(route.from).addTo(map).bindPopup('Start: ' + route.from);
-      L.marker(route.to).addTo(map).bindPopup('End: ' + route.to);
-    });
+          // 绘制曲线
+          if (fromCoords && toCoords) {
+            L.curve(
+              ['M', fromCoords, 'Q', [(fromCoords[0] + toCoords[0]) / 2, (fromCoords[1] + toCoords[1]) / 2], toCoords],
+              { color: 'blue', weight: 3, opacity: 0.6 }
+            ).addTo(map);
+          }
+        }
+      });
+
+    // 获取城市坐标
+    async function getCoordinates(city) {
+      const url = geocodeURL.replace("{city}", encodeURIComponent(city));
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results.length > 0) {
+          const coords = data.results[0].geometry;
+          return [coords.lat, coords.lng];
+        }
+      } catch (error) {
+        console.error("地理编码错误：", error);
+      }
+      return null;
+    }
   </script>
 </body>
 </html>
