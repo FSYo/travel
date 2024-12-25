@@ -46,17 +46,58 @@
       }
     }
 
-    // 从 routes.json 读取航线数据
-    async function loadRoutes() {
-      try {
-        const response = await fetch('routes.json');
-        const routes = await response.json();
-        return routes;
-      } catch (error) {
-        console.error("无法加载航线数据：", error);
-        return [];
-      }
-    }
+    // 定义航线数据（不使用 routes.json）
+    const routes = [     
+        { from: 'Chengdu, China', to: 'Kuche, China' ,year: 2021},
+      { from: 'Kurla, China', to: 'Chengdu, China' ,year: 2021},
+      {from: 'Chengdu, China', to: 'Shenzhen, China',year: 2021},
+      {from: 'Zhuhai, China', to: 'Chongqing, China',year: 2021},
+      {from: 'Chengdu, China', to: 'Wuhan, China', year: 2022},
+      {from: 'Wuhan, China', to: 'Chengdu, China', year: 2022},
+      {from: 'Chengdu, China', to: 'Shanghai, China', year: 2022},
+      {from: 'Hangzhou, China', to: 'Chengdu, China', year: 2022},
+      {from: 'Chengdu, China', to: 'Qingdao, China', year: 2022},
+      {from: 'Qingdao, China', to: 'Hangzhou, China', year: 2022},
+      {from: 'Hangzhou, China', to: 'Chengdu, China', year: 2022},
+      {from: 'Chengdu, China', to: 'Shenzhen, China', year: 2022},
+      {from: 'Shenzhen, China', to: 'Wuhan, China', year: 2022},
+      {from: 'Wuhan, China', to: 'Chengdu, China', year: 2022},
+      {from: 'Guiyang, China', to: 'Beijing, China', year: 2022},
+      {from: 'Chengdu, China', to: 'Lijiang, China', year: 2023},
+      {from: 'Beijing, China', to: 'Guangzhou, China',year: 2023},
+      {from: 'Guangzhou, China', to: 'Beijing, China',year: 2023},
+      {from: 'Beijing, China', to: 'Chengdu, China',year: 2023},
+      {from: 'Chengdu, China', to: 'Beijing, China',year: 2023},
+      {from: 'Tianjing, China', to: 'Tokyo, Japan',year: 2023},
+      {from: 'Nagoya, Japan', to: 'Hongkong, China',year: 2023},
+      {from: 'Shenzhen, China', to: 'Chongqing, China',year: 2023},
+      {from: 'Chongqing, China', to: 'Beijing, China',year: 2023},
+      {from: 'Beijing, China', to: 'Harbin, China',year: 2023},
+      {from: 'Fuzhou, China', to: 'Chengdu, China', year: 2024},
+      {from: 'Chengdu, China', to: 'Beijing, China', year: 2024},
+      {from: 'Beijing, China', to: 'Carol, Egypt', year: 2024},
+      {from: 'Carol, Egypt', to: 'Luxor, Egypt', year: 2024},
+      {from: 'Luxor, Egypt', to: 'Carol, Egypt', year: 2024},
+      {from: 'Carol, Egypt', to: 'Guangzhou, China', year: 2024},
+      {from: 'Guangzhou, China', to: 'Beijing, China', year: 2024},
+      {from: 'Beijing, China', to: 'Urumqi, China', year: 2024},
+      {from: 'Urumqi, China', to: 'Beijing, China', year: 2024},
+      {from: 'Beijing, China', to: 'Shenzhen, China', year: 2024},
+      {from: 'Shenzhen, China', to: 'Beijing, China', year: 2024},
+      {from: 'Beijing, China', to: 'Chengdu, China', year: 2024},
+      {from: 'Chengdu, China', to: 'Beijing, China', year: 2024},
+      {from: 'Beijing, China', to: 'New York, USA', year: 2024},
+      {from: 'New York, USA', to: 'Cancun, Mexico', year: 2024},
+      {from: 'Cancun, Mexico', to: 'New York, USA', year: 2024},
+      {from: 'New York, USA', to: 'Beijing, China', year: 2024},
+      {from: 'Beijing, China', to: 'Istanbul, Turkey', year: 2024},
+      {from: 'Istanbul, Turkey', to: 'New York, USA', year: 2024},
+        {from: 'Washinton D.C., USA', to: 'Denver, USA', year: 2024},
+        {from: 'Denver, USA', to: 'Pittsburgh, USA', year: 2024},
+        {from: 'Pittsburgh, USA', to: 'Miami, USA', year: 2024},
+        {from: 'Miami, USA', to: 'Pittsburgh, USA', year: 2024},
+        {from: 'Pittsburgh, USA', to: 'San Francisco, USA', year: 2024},
+    ];
 
     // 计算两点之间的距离（单位：千米）
     function calculateDistance(fromCoords, toCoords) {
@@ -94,20 +135,20 @@
 
         return controlPoint;
     }
+// 定义年份范围和颜色渐变的函数
+function getRouteColor(year) {
+  const maxYear = 2025; // 最大年份
+  const minYear = 2020; // 最小年份
+  const colorScale = d3.scaleLinear()
+    .domain([minYear, maxYear]) // 通过年份映射颜色
+    .range(["#3B82F6", "#1E3A8A"]); // 从浅蓝色到深蓝色的渐变
 
-    // 定义年份范围和颜色渐变的函数
-    function getRouteColor(year) {
-      const maxYear = 2025; // 最大年份
-      const minYear = 2020; // 最小年份
-      const colorScale = d3.scaleLinear()
-        .domain([minYear, maxYear]) // 通过年份映射颜色
-        .range(["#3B82F6", "#1E3A8A"]); // 从浅蓝色到深蓝色的渐变
+  return colorScale(year);
+}
 
-      return colorScale(year);
-    }
 
     // 绘制航线，并根据航线长度调整弯曲度
-    async function drawRoutes(cityCoordinates, routes) {
+    async function drawRoutes(cityCoordinates) {
       const routeRequests = routes.map(city => {
         const fromCoords = cityCoordinates[city.from];
         const toCoords = cityCoordinates[city.to];
@@ -142,11 +183,10 @@
 
     // 加载城市坐标并绘制航线
     loadCityCoordinates().then(cityCoordinates => {
-      loadRoutes().then(routes => {
-        drawRoutes(cityCoordinates, routes);
-      });
+      drawRoutes(cityCoordinates);
     });
 
   </script>
 </body>
 </html>
+
