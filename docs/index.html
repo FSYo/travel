@@ -34,6 +34,31 @@
       maxZoom: 20
     }).addTo(map);
 
+    // 添加标题控件
+L.Control.Title = L.Control.extend({
+  onAdd: function(map) {
+    var div = L.DomUtil.create('div', 'map-title');
+    div.innerHTML = '<h2>My Flight Map (After 2021) </h2>';
+    div.style.background = 'rgba(255, 255, 255, 0.8)';
+    div.style.padding = '10px';
+    div.style.borderRadius = '5px';
+    div.style.boxShadow = '0 0 15px rgba(0, 0, 0, 0.2)';
+    return div;
+  },
+
+  onRemove: function(map) {
+    // Nothing to do here
+  }
+});
+
+// 添加控件到地图左上角
+L.control.title = function(opts) {
+  return new L.Control.Title(opts);
+};
+
+L.control.title({ position: 'topright' }).addTo(map);
+
+
     // 读取本地的城市坐标文件
     async function loadCityCoordinates() {
       try {
@@ -106,15 +131,36 @@
       return colorScale(year);
     }
 
+    function adjustForOtherSide(fromCoords, toCoords) {
+      const longitudeDiff = toCoords[1] - fromCoords[1];
+      
+      if (longitudeDiff > 180) {
+        // 如果终点在右侧更远，则调整到左侧
+        fromCoords = [fromCoords[0], fromCoords[1] + 360];
+      } else if (longitudeDiff < -180) {
+        // 如果终点在左侧更远，则调整到右侧
+        toCoords = [toCoords[0], toCoords[1] + 360];
+      }
+      
+      return {fromCoords, toCoords};
+    }
+
+
     // 绘制航线，并根据航线长度调整弯曲度
     async function drawRoutes(cityCoordinates, routes) {
       const routeRequests = routes.map(city => {
         const fromCoords = cityCoordinates[city.from];
         const toCoords = cityCoordinates[city.to];
 
-        if (fromCoords && toCoords) {
+        // 调整终点坐标，使其在地图上更接近起点
+        const Coord = adjustForOtherSide(fromCoords, toCoords);
+        const fromCoords1 = Coord.fromCoords;
+        const toCoords1 = Coord.toCoords;
+        console.log(city.from, city.to);
+
+        if (fromCoords1 && toCoords1) {
           // 计算航线的距离
-          const distance = calculateDistance(fromCoords, toCoords);
+          const distance = calculateDistance(fromCoords1, toCoords1);
           const offset = Math.min((Math.log(distance) * 0.163) ** 8, 50);
           console.log(`Distance between ${city.from} and ${city.to}: ${distance.toFixed(2)} km`);
 
@@ -123,16 +169,16 @@
 
           // 绘制曲线
           L.curve(
-            ['M', fromCoords, 'Q', 
-            getOffsetControlPoint(fromCoords, toCoords, offset), // 获取偏移后的控制点
-            toCoords],
+            ['M', fromCoords1, 'Q', 
+            getOffsetControlPoint(fromCoords1, toCoords1, offset), // 获取偏移后的控制点
+            toCoords1],
             { color: color, weight: 0.5 + (city.year - 2021) * 0.3 , opacity: 0.6 }
         ).addTo(map);
 
 
           // 在起点和终点绘制小点
-          L.circleMarker(fromCoords, { color: 'red', weight: 0.2, radius: 2 }).addTo(map);
-          L.circleMarker(toCoords, { color: 'red', weight: 0.2, radius: 2  }).addTo(map);
+          L.circleMarker(fromCoords1, { color: 'red', weight: 0.2, radius: 2 }).addTo(map);
+          L.circleMarker(toCoords1, { color: 'red', weight: 0.2, radius: 2  }).addTo(map);
         }
       });
 

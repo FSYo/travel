@@ -20,6 +20,7 @@
   { "from": "Shenzhen, China", "to": "Chongqing, China", "year": 2023 },
   { "from": "Chongqing, China", "to": "Beijing, China", "year": 2023 },
   { "from": "Beijing, China", "to": "Harbin, China", "year": 2023 },
+  { "from": "Harbin, China", "to": "Beijing, China", "year": 2023 },
   { "from": "Fuzhou, China", "to": "Chengdu, China", "year": 2024 },
   { "from": "Chengdu, China", "to": "Beijing, China", "year": 2024 },
   { "from": "Beijing, China", "to": "Carol, Egypt", "year": 2024 },
@@ -41,5 +42,6 @@
   { "from": "Denver, USA", "to": "Pittsburgh, USA", "year": 2024 },
   { "from": "Pittsburgh, USA", "to": "Miami, USA", "year": 2024 },
   { "from": "Miami, USA", "to": "Pittsburgh, USA", "year": 2024 },
-  { "from": "Pittsburgh, USA", "to": "San Francisco, USA", "year": 2024 }
+  { "from": "Pittsburgh, USA", "to": "San Francisco, USA", "year": 2024 },
+  {"from": "San Francisco, USA", "to": "Taipei, China", "year": 2024}
 ]
