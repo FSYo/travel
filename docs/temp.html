@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    /* 设置地图容器全屏 */
+    html, body, #map {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* 模态窗口的样式 */
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    #modal img {
+      max-width: 100vw;
+      max-height: 100vh;
+      object-fit: contain;
+      margin: auto;
+      display: block;
+    }
+    #modal span {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- 引入 Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- 引入 Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- 引入 Leaflet.curve 插件 -->
+  <script src="leaflet.curve.js"></script>
+  <script src="https://unpkg.com/leaflet-polylinedecorator"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- 模态窗口 -->
+  <div id="modal">
+    <span onclick="closeModal()">&times;</span>
+    <img id="modal-image" src="" />
+  </div>
+
+  <!-- 地图容器 -->
+  <div id="map"></div>
+
+  <script>
+    // 创建地图
+    var map = L.map('map').setView([0, 0], 2); // 默认位置设置为(0, 0)，缩放级别为2
+
+    // 加载地图底图
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png?api_key=fe0d5c75-05be-425e-a147-61d7c4162184', {
+      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>',
+      maxZoom: 20
+    }).addTo(map);
+
+    // 添加标题控件
+    L.Control.Title = L.Control.extend({
+      onAdd: function(map) {
+        var div = L.DomUtil.create('div', 'map-title');
+        div.innerHTML = '<h2>My Flight Map (After 2021) </h2>';
+        div.style.background = 'rgba(255, 255, 255, 0.8)';
+        div.style.padding = '10px';
+        div.style.borderRadius = '5px';
+        div.style.boxShadow = '0 0 15px rgba(0, 0, 0, 0.2)';
+        return div;
+      },
+
+      onRemove: function(map) {
+        // Nothing to do here
+      }
+    });
+
+    L.control.title = function(opts) {
+      return new L.Control.Title(opts);
+    };
+
+    L.control.title({ position: 'topright' }).addTo(map);
+
+    // 读取本地的城市坐标文件
+    async function loadCityCoordinates() {
+      try {
+        const response = await fetch('cities_coordinates.json');
+        const cityCoordinates = await response.json();
+        return cityCoordinates;
+      } catch (error) {
+        console.error("无法加载城市坐标文件：", error);
+        return {};
+      }
+    }
+
+    // 从 routes.json 读取航线数据
+    async function loadRoutes() {
+      try {
+        const response = await fetch('routes.json');
+        const routes = await response.json();
+        return routes;
+      } catch (error) {
+        console.error("无法加载航线数据：", error);
+        return [];
+      }
+    }
+
+    // 计算两点之间的距离（单位：千米）
+    function calculateDistance(fromCoords, toCoords) {
+      const R = 6371; // 地球半径，单位为千米
+      const lat1 = fromCoords[0] * Math.PI / 180;
+      const lat2 = toCoords[0] * Math.PI / 180;
+      const dlat = (toCoords[0] - fromCoords[0]) * Math.PI / 180;
+      const dlng = (toCoords[1] - fromCoords[1]) * Math.PI / 180;
+
+      const a = Math.sin(dlat / 2) * Math.sin(dlat / 2) +
+                  Math.cos(lat1) * Math.cos(lat2) *
+                  Math.sin(dlng / 2) * Math.sin(dlng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c; // 返回距离，单位：千米
+    }
+
+    // 获取偏移控制点
+    function getOffsetControlPoint(fromCoords, toCoords, offset) {
+      const midPoint = [(fromCoords[0] + toCoords[0]) * 0.5, (fromCoords[1] + toCoords[1]) * 0.5];
+      const dx = toCoords[0] - fromCoords[0];
+      const dy = toCoords[1] - fromCoords[1];
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const perpendicularUnitVector = [-dy / length, dx / length];
+      const controlPoint = [
+          midPoint[0] + perpendicularUnitVector[0] * offset,
+          midPoint[1] + perpendicularUnitVector[1] * offset
+      ];
+
+      return controlPoint;
+    }
+
+    // 获取航线颜色
+    function getRouteColor(year) {
+      const maxYear = 2025; 
+      const minYear = 2020; 
+      const colorScale = d3.scaleLinear()
+        .domain([minYear, maxYear]) 
+        .range(["#3B82F6", "#1E3A8A"]); 
+      return colorScale(year);
+    }
+
+    // 调整经度超出范围
+    function adjustForOtherSide(fromCoords, toCoords) {
+      const longitudeDiff = toCoords[1] - fromCoords[1];
+      if (longitudeDiff > 180) {
+        fromCoords = [fromCoords[0], fromCoords[1] + 360];
+      } else if (longitudeDiff < -180) {
+        toCoords = [toCoords[0], toCoords[1] + 360];
+      }
+      return { fromCoords, toCoords };
+    }
+
+    // 绘制航线
+    async function drawRoutes(cityCoordinates, routes) {
+      const routeRequests = routes.map(city => {
+        const fromCoords = cityCoordinates[city.from];
+        const toCoords = cityCoordinates[city.to];
+        const Coord = adjustForOtherSide(fromCoords, toCoords);
+        const fromCoords1 = Coord.fromCoords;
+        const toCoords1 = Coord.toCoords;
+
+        if (fromCoords1 && toCoords1) {
+          const distance = calculateDistance(fromCoords1, toCoords1);
+          const offset = Math.min((Math.log(distance) * 0.163) ** 8, 50);
+          const color = getRouteColor(city.year); 
+
+          // 绘制曲线
+          L.curve(
+            ['M', fromCoords1, 'Q', 
+            getOffsetControlPoint(fromCoords1, toCoords1, offset), 
+            toCoords1],
+            { color: color, weight: 0.5 + (city.year - 2021) * 0.3 , opacity: 0.6 }
+          ).addTo(map);
+
+          // 为起点和终点添加红色小点
+          L.circleMarker(fromCoords1, { color: 'red', weight: 0.2, radius: 2 }).addTo(map);
+          L.circleMarker(toCoords1, { color: 'red', weight: 0.2, radius: 2 }).addTo(map);
+
+          // 为每个城市添加点击事件显示图片
+          L.marker(fromCoords1).addTo(map).on('click', function() {
+            openImage(city.imageUrl);
+          });
+        }
+      });
+
+      // 等待所有航线绘制完成
+      await Promise.all(routeRequests);
+    }
+
+    // 打开模态窗口显示图片
+    function openImage(url) {
+      document.getElementById('modal-image').src = url;
+      document.getElementById('modal').style.display = 'block';
+    }
+
+    // 关闭模态窗口
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    // 加载城市坐标并绘制航线
+    loadCityCoordinates().then(cityCoordinates => {
+      loadRoutes().then(routes => {
+        drawRoutes(cityCoordinates, routes);
+      });
+    });
+
+  </script>
+</body>
+</html>

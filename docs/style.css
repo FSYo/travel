@@ -1,0 +1,144 @@
+/* 设置地图容器为全屏 */
+html, body, #map {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+  }
+  
+  /* 地图标题样式 */
+  .map-title {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  #photo-carousel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+  }
+  
+  #photo-carousel.hidden {
+    display: none;
+  }
+  
+  #photo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  #photo-container img {
+    max-width: 500px;
+    max-height: 400px;
+    border-radius: 5px;
+  }
+  
+  button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+  }
+  
+  /* Modal 样式 */
+.modal {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+    display: none;
+    overflow: auto;
+    padding-top: 60px;
+}
+
+/* Modal 内容 */
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+/* 关闭按钮 */
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* 图片样式 */
+.photo-image {
+    width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+/* 为图钉样式添加 CSS */
+.custom-icon .pin {
+    width: 10px; /* 修改为更小的宽度 */
+    height: 10px; /* 修改为更小的高度 */
+    background-color: #FF6B6B; /* 红色偏粉的颜色 */
+    border-radius: 50%;
+    position: relative;
+    border: 3px solid white;
+    box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.4); /* 调整阴影的大小 */
+  }
+  
+  .custom-icon .pin:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent; /* 改小 */
+    border-right: 4px solid transparent; /* 改小 */
+    border-top: 8px solid #FF6B6B; /* 改小 */
+    left: 50%;
+    bottom: -8px; /* 改小 */
+    transform: translateX(-50%);
+  }
+  
+
+  .arrow-pin {
+    width: 10px;
+    height: 10px;
+    background-color: #FF5733; /* 红色偏粉的背景色 */
+    border-radius: 50%;
+    position: relative;
+    border: 3px solid white;
+  }
+  
+  .arrow-pin:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 8px solid #FF5733; /* 同样的红色偏粉 */
+    left: 50%;
+    bottom: -8px;
+    transform: translateX(-50%);
+  }
+  
