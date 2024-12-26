@@ -34,6 +34,9 @@ function popPhoto(photoPaths) {
     image.src = photoPaths[0]; // 初始显示第一张图片
     image.style.maxWidth = '90%';
     image.style.maxHeight = '90%';
+    image.style.width = 'auto'; // 保证比例正确
+    image.style.height = 'auto'; 
+
     image.style.border = '5px solid white';
     imageContainer.appendChild(image);
 
