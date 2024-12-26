@@ -1,7 +1,7 @@
 {
     "Beijing": {
       "coordinates": [39.9042, 116.4074],
-      "photo": ["./images/beijing1.JPG", "./images/luxor1.JPG"]
+      "photo": ["./images/beijing1.jpg", "./images/luxor1.jpg"]
     }
   }
   
