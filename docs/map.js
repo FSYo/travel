@@ -57,7 +57,7 @@ loadCityCoordinates().then(cityCoordinates => {
 
 // 获取照片数据
 function getphotoData() {
-  return fetch('photo.json')
+  return fetch('./photo.json')
     .then(response => response.json())
     .then(data => {
       return data; // 返回所有城市的数据
